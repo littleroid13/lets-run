@@ -216,22 +216,11 @@ export class OverlayUI {
         feedback.textContent = result.isTimeout ? 'WAKTU HABIS!' : 'KURANG TEPAT!';
         if (speedLines) speedLines.classList.remove('active');
 
-        // Tampilkan label singkat "Jawaban: [huruf] - [teks jawaban]" selama ~1.5 dtk
+        // Jangan tampilkan jawaban di tengah layar saat salah (sesuai permintaan user)
         const revealBanner = document.getElementById(`answer-reveal-${laneIndex}`);
         if (revealBanner) {
-          const letters = ['A', 'B', 'C', 'D'];
-          const correctLetter = letters[result.correctIndex] || 'A';
-          const answerText = result.correctText || '';
-          revealBanner.textContent = `Jawaban: ${correctLetter} - ${answerText}`;
-          revealBanner.classList.add('visible');
-
-          if (!this.revealTimeouts) this.revealTimeouts = {};
-          if (this.revealTimeouts[laneIndex]) {
-            clearTimeout(this.revealTimeouts[laneIndex]);
-          }
-          this.revealTimeouts[laneIndex] = setTimeout(() => {
-            revealBanner.classList.remove('visible');
-          }, (CONFIG.ANSWER_REVEAL_DURATION || 1.5) * 1000);
+          revealBanner.classList.remove('visible');
+          revealBanner.textContent = '';
         }
       }
     }
@@ -247,6 +236,13 @@ export class OverlayUI {
     if (feedback) {
       feedback.className = 'feedback-badge feedback-correct';
       feedback.textContent = `FINIS ${rankText}! (+${finishBonus} PTS)`;
+    }
+  }
+
+  updateScore(laneIndex, score) {
+    const scoreEl = document.getElementById(`score-${laneIndex}`);
+    if (scoreEl) {
+      scoreEl.textContent = `${score} PTS`;
     }
   }
 

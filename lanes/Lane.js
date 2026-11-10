@@ -60,10 +60,10 @@ export class Lane {
     this.x = config.xOffset;
     this.totalQuestions = CONFIG.TOTAL_QUESTIONS || 10;
 
-    // Hitung posisi finis dinamis
-    this.cycleDistance = CONFIG.REWARD_RUN_DISTANCE + CONFIG.APPROACH_DISTANCE;
-    this.trackLength = CONFIG.START_OFFSET + (this.totalQuestions * this.cycleDistance) + CONFIG.FINISH_BUFFER;
-    this.finishZ = -this.trackLength;
+    // Hitung estimasi panjang lintasan dasar (akan disesuaikan dinamis)
+    const cycleDistance = CONFIG.APPROACH_DISTANCE + 7.5 + CONFIG.REWARD_RUN_DISTANCE;
+    this.trackLength = CONFIG.START_OFFSET + (this.totalQuestions * cycleDistance) + (CONFIG.FINISH_BUFFER || 30.0) + 160.0;
+    this.finishZ = -999999;
 
     // State mandiri per jalur
     // State: 'WAITING' | 'LARI_BEBAS' | 'SOAL_MENDEKAT' | 'LEWAT_GERBANG' | 'FINISH_RUN' | 'SELESAI'
@@ -143,9 +143,10 @@ export class Lane {
 
   recalculateTrack(totalQuestions) {
     this.totalQuestions = totalQuestions;
-    this.cycleDistance = CONFIG.REWARD_RUN_DISTANCE + CONFIG.APPROACH_DISTANCE;
-    this.trackLength = CONFIG.START_OFFSET + (this.totalQuestions * this.cycleDistance) + CONFIG.FINISH_BUFFER;
-    this.finishZ = -this.trackLength;
+    const cycleDistance = CONFIG.APPROACH_DISTANCE + 7.5 + CONFIG.REWARD_RUN_DISTANCE;
+    const maxQ = Math.max(this.totalQuestions || 10, this.questions?.length || 10, 20);
+    this.trackLength = CONFIG.START_OFFSET + (maxQ * cycleDistance) + (CONFIG.FINISH_BUFFER || 30.0) + 160.0;
+    this.finishZ = -999999;
 
     while (this.trackGroup.children.length > 0) {
       const obj = this.trackGroup.children[0];
@@ -156,74 +157,91 @@ export class Lane {
     this.buildFinishLine();
   }
 
+  createTrackSegment(segZ, trackWidth, segmentLength) {
+    const segGroup = new THREE.Group();
+
+    const baseGeo = new THREE.PlaneGeometry(trackWidth, segmentLength);
+    const baseMesh = new THREE.Mesh(baseGeo, this.roadBaseMat);
+    baseMesh.rotation.x = -Math.PI / 2;
+    baseMesh.position.set(this.x, 0, segZ);
+    segGroup.add(baseMesh);
+
+    const stripGeo = new THREE.PlaneGeometry(trackWidth - 0.8, segmentLength);
+    const stripMesh = new THREE.Mesh(stripGeo, this.laneStripMat);
+    stripMesh.rotation.x = -Math.PI / 2;
+    stripMesh.position.set(this.x, 0.002, segZ);
+    segGroup.add(stripMesh);
+
+    const curbGeo = new THREE.BoxGeometry(0.18, 0.08, segmentLength);
+    const leftCurb = new THREE.Mesh(curbGeo, this.curbMat);
+    leftCurb.position.set(this.x - trackWidth / 2 + 0.09, 0.04, segZ);
+    segGroup.add(leftCurb);
+
+    const rightCurb = new THREE.Mesh(curbGeo, this.curbMat);
+    rightCurb.position.set(this.x + trackWidth / 2 - 0.09, 0.04, segZ);
+    segGroup.add(rightCurb);
+
+    for (let d = 0; d < 3; d++) {
+      const dashGeo = new THREE.PlaneGeometry(0.14, 2.4);
+      const dash = new THREE.Mesh(dashGeo, this.dashMat);
+      dash.rotation.x = -Math.PI / 2;
+      const dashZ = (segZ + segmentLength / 2) - ((d + 0.5) * (segmentLength / 3));
+      dash.position.set(this.x, 0.005, dashZ);
+      segGroup.add(dash);
+    }
+
+    segGroup.matrixAutoUpdate = false;
+    segGroup.updateMatrix();
+    segGroup.traverse((child) => {
+      child.matrixAutoUpdate = false;
+      child.updateMatrix();
+    });
+
+    return segGroup;
+  }
+
+  ensureTrackCoversZ(targetZ) {
+    if (this.furthestTrackZ <= targetZ) return;
+    const trackWidth = 5.0;
+    const segmentLength = 20.0;
+    while (this.furthestTrackZ > targetZ) {
+      const segZ = this.furthestTrackZ - segmentLength / 2;
+      const segGroup = this.createTrackSegment(segZ, trackWidth, segmentLength);
+      this.trackGroup.add(segGroup);
+      this.furthestTrackZ -= segmentLength;
+    }
+  }
+
   buildModularTrack() {
     const trackWidth = 5.0;
     const segmentLength = 20.0;
     const startZ = 20.0;
     const segmentCount = Math.ceil((this.trackLength + 40.0) / segmentLength);
 
-    const roadBaseMat = new THREE.MeshStandardMaterial({
-      color: 0x22262e,
-      roughness: 0.85,
-      metalness: 0.1
-    });
-
-    const laneStripMat = new THREE.MeshStandardMaterial({
-      color: this.config.trackColor || 0x2980b9,
-      roughness: 0.75,
-      metalness: 0.15
-    });
-
-    const curbMat = new THREE.MeshStandardMaterial({
-      color: 0xecf0f1,
-      roughness: 0.6
-    });
-
-    const dashMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    if (!this.roadBaseMat) {
+      this.roadBaseMat = new THREE.MeshStandardMaterial({
+        color: 0x22262e,
+        roughness: 0.85,
+        metalness: 0.1
+      });
+      this.laneStripMat = new THREE.MeshStandardMaterial({
+        color: this.config.trackColor || 0x2980b9,
+        roughness: 0.75,
+        metalness: 0.15
+      });
+      this.curbMat = new THREE.MeshStandardMaterial({
+        color: 0xecf0f1,
+        roughness: 0.6
+      });
+      this.dashMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    }
 
     for (let i = 0; i < segmentCount; i++) {
       const segZ = startZ - (i * segmentLength) - segmentLength / 2;
-      const segGroup = new THREE.Group();
-
-      const baseGeo = new THREE.PlaneGeometry(trackWidth, segmentLength);
-      const baseMesh = new THREE.Mesh(baseGeo, roadBaseMat);
-      baseMesh.rotation.x = -Math.PI / 2;
-      baseMesh.position.set(this.x, 0, segZ);
-      segGroup.add(baseMesh);
-
-      const stripGeo = new THREE.PlaneGeometry(trackWidth - 0.8, segmentLength);
-      const stripMesh = new THREE.Mesh(stripGeo, laneStripMat);
-      stripMesh.rotation.x = -Math.PI / 2;
-      stripMesh.position.set(this.x, 0.002, segZ);
-      segGroup.add(stripMesh);
-
-      const curbGeo = new THREE.BoxGeometry(0.18, 0.08, segmentLength);
-      const leftCurb = new THREE.Mesh(curbGeo, curbMat);
-      leftCurb.position.set(this.x - trackWidth / 2 + 0.09, 0.04, segZ);
-      segGroup.add(leftCurb);
-
-      const rightCurb = new THREE.Mesh(curbGeo, curbMat);
-      rightCurb.position.set(this.x + trackWidth / 2 - 0.09, 0.04, segZ);
-      segGroup.add(rightCurb);
-
-      for (let d = 0; d < 3; d++) {
-        const dashGeo = new THREE.PlaneGeometry(0.14, 2.4);
-        const dash = new THREE.Mesh(dashGeo, dashMat);
-        dash.rotation.x = -Math.PI / 2;
-        const dashZ = (segZ + segmentLength / 2) - ((d + 0.5) * (segmentLength / 3));
-        dash.position.set(this.x, 0.005, dashZ);
-        segGroup.add(dash);
-      }
-
-      segGroup.matrixAutoUpdate = false;
-      segGroup.updateMatrix();
-      segGroup.traverse((child) => {
-        child.matrixAutoUpdate = false;
-        child.updateMatrix();
-      });
-
+      const segGroup = this.createTrackSegment(segZ, trackWidth, segmentLength);
       this.trackGroup.add(segGroup);
     }
+    this.furthestTrackZ = startZ - (segmentCount * segmentLength);
 
     const startGeo = new THREE.PlaneGeometry(trackWidth - 0.2, 1.8);
     const startMat = new THREE.MeshBasicMaterial({ map: createCheckeredTexture() });
@@ -238,23 +256,34 @@ export class Lane {
   buildFinishLine() {
     const trackWidth = 5.0;
 
+    if (!this.finishGroup) {
+      this.finishGroup = new THREE.Group();
+      this.scene.add(this.finishGroup);
+    } else {
+      while (this.finishGroup.children.length > 0) {
+        const obj = this.finishGroup.children[0];
+        this.finishGroup.remove(obj);
+        if (obj.geometry) obj.geometry.dispose();
+      }
+    }
+
     const finishGeo = new THREE.PlaneGeometry(trackWidth, 3.2);
     const finishMat = new THREE.MeshBasicMaterial({ map: createCheckeredTexture() });
     this.finishMesh = new THREE.Mesh(finishGeo, finishMat);
     this.finishMesh.rotation.x = -Math.PI / 2;
-    this.finishMesh.position.set(this.x, 0.015, this.finishZ);
-    this.trackGroup.add(this.finishMesh);
+    this.finishMesh.position.set(this.x, 0.015, 0);
+    this.finishGroup.add(this.finishMesh);
 
     const poleGeo = new THREE.CylinderGeometry(0.14, 0.14, 4.8, 16);
     const poleMat = new THREE.MeshStandardMaterial({ color: 0xecf0f1, roughness: 0.3 });
 
     this.leftPole = new THREE.Mesh(poleGeo, poleMat);
-    this.leftPole.position.set(this.x - trackWidth / 2 + 0.1, 2.4, this.finishZ);
-    this.trackGroup.add(this.leftPole);
+    this.leftPole.position.set(this.x - trackWidth / 2 + 0.1, 2.4, 0);
+    this.finishGroup.add(this.leftPole);
 
     this.rightPole = new THREE.Mesh(poleGeo, poleMat);
-    this.rightPole.position.set(this.x + trackWidth / 2 - 0.1, 2.4, this.finishZ);
-    this.trackGroup.add(this.rightPole);
+    this.rightPole.position.set(this.x + trackWidth / 2 - 0.1, 2.4, 0);
+    this.finishGroup.add(this.rightPole);
 
     const bannerGeo = new THREE.PlaneGeometry(trackWidth - 0.2, 1.3);
     const bannerMat = new THREE.MeshBasicMaterial({
@@ -262,8 +291,12 @@ export class Lane {
       side: THREE.DoubleSide
     });
     this.bannerMesh = new THREE.Mesh(bannerGeo, bannerMat);
-    this.bannerMesh.position.set(this.x, 4.0, this.finishZ);
-    this.trackGroup.add(this.bannerMesh);
+    this.bannerMesh.position.set(this.x, 4.0, 0);
+    this.finishGroup.add(this.bannerMesh);
+
+    // Garis finis TIDAK dimunculkan di awal agar pemain tidak melihat atau menabrak finis saat soal belum selesai
+    this.finishGroup.visible = false;
+    this.finishZ = -999999;
   }
 
   buildDizzyStars() {
@@ -407,6 +440,11 @@ export class Lane {
       this.currentGate = null;
     }
 
+    if (this.finishGroup) {
+      this.finishGroup.visible = false;
+    }
+    this.finishZ = -999999;
+
     if (this.character) {
       this.character.position.set(this.x, 0, 0);
       const runAction = this.actions['run'] || this.actions['run_carry'];
@@ -439,15 +477,32 @@ export class Lane {
     }
   }
 
+  showFinishLineAhead() {
+    this.state = 'FINISH_RUN';
+    this.currentSpeed = CONFIG.BASE_SPEED * 1.35;
+    this.targetTimeScale = 1.35;
+
+    // Munculkan garis finis tepat di depan karakter setelah SELURUH soal tuntas
+    const sprintDistance = CONFIG.FINISH_BUFFER || 28.0;
+    this.finishZ = this.character.position.z - sprintDistance;
+
+    if (this.finishGroup) {
+      this.finishGroup.position.set(0, 0, this.finishZ);
+      this.finishGroup.visible = true;
+    }
+
+    // Pastikan jalan lintasan tertutup mulus hingga melewati finish line
+    this.ensureTrackCoversZ(this.finishZ - 50.0);
+
+    if (this.onQuestionAppear) {
+      this.onQuestionAppear(this.index, null, this.currentQIndex, this.questions.length);
+    }
+  }
+
   triggerNextQuestion() {
     if (this.currentQIndex >= this.questions.length) {
-      // Semua soal selesai! Lari ke finis sejauh FINISH_BUFFER
-      this.state = 'FINISH_RUN';
-      this.currentSpeed = CONFIG.BASE_SPEED * 1.35;
-      this.targetTimeScale = 1.35;
-      if (this.onQuestionAppear) {
-        this.onQuestionAppear(this.index, null, this.currentQIndex, this.questions.length);
-      }
+      // Semua soal selesai! Munculkan garis finis di depan dan sprint
+      this.showFinishLineAhead();
       return;
     }
 
@@ -762,13 +817,8 @@ export class Lane {
           this.state = 'LARI_BEBAS';
           this.rewardRunStartPosZ = this.character.position.z;
         } else {
-          // Semua soal selesai! Lari sprint ke garis finis
-          this.state = 'FINISH_RUN';
-          this.currentSpeed = CONFIG.BASE_SPEED * 1.35;
-          this.targetTimeScale = 1.35;
-          if (this.onQuestionAppear) {
-            this.onQuestionAppear(this.index, null, this.currentQIndex, this.questions.length);
-          }
+          // Semua soal selesai! Munculkan garis finis di depan dan sprint
+          this.showFinishLineAhead();
         }
       }
     } else if (this.state === 'FINISH_RUN') {
@@ -835,6 +885,10 @@ export class Lane {
     }
     if (this.dizzyStarsGroup) {
       this.scene.remove(this.dizzyStarsGroup);
+    }
+    if (this.finishGroup) {
+      this.scene.remove(this.finishGroup);
+      this.finishGroup = null;
     }
   }
 }

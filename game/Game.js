@@ -414,6 +414,7 @@ export class Game {
       } else {
         lane.isActive = false;
         lane.trackGroup.visible = false;
+        if (lane.finishGroup) lane.finishGroup.visible = false;
         if (lane.character) lane.character.visible = false;
       }
     });
@@ -574,6 +575,7 @@ export class Game {
     this.lanes.forEach((lane) => {
       lane.isActive = true;
       lane.trackGroup.visible = true;
+      if (lane.finishGroup) lane.finishGroup.visible = false;
       if (lane.character) lane.character.visible = true;
       lane.prepareForRace();
     });

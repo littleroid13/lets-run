@@ -1,0 +1,115 @@
+{
+  "judul": "Kuis Pintar Juara SD",
+  "soal": [
+    {
+      "tanya": "Berapakah hasil dari 15 × 12?",
+      "pilihan": ["160", "170", "180", "190"],
+      "benar": 2
+    },
+    {
+      "tanya": "Proses pembuatan makanan pada tumbuhan hijau dengan cahaya disebut...",
+      "pilihan": ["Respirasi", "Fotosintesis", "Transpirasi", "Osmosis"],
+      "benar": 1
+    },
+    {
+      "tanya": "ASEAN didirikan pada tanggal 8 Agustus 1967 di kota...",
+      "pilihan": ["Jakarta", "Manila", "Singapura", "Bangkok"],
+      "benar": 3
+    },
+    {
+      "tanya": "Ide utama atau pokok persoalan dalam suatu paragraf disebut...",
+      "pilihan": ["Gagasan pokok", "Kalimat penjelas", "Kata kunci", "Ringkasan"],
+      "benar": 0
+    },
+    {
+      "tanya": "Organ tubuh yang berfungsi memompa darah ke seluruh tubuh adalah...",
+      "pilihan": ["Paru-paru", "Hati", "Jantung", "Ginjal"],
+      "benar": 2
+    },
+    {
+      "tanya": "KPK dari bilangan 12 dan 18 adalah...",
+      "pilihan": ["24", "36", "48", "72"],
+      "benar": 1
+    },
+    {
+      "tanya": "Candi Borobudur peninggalan Dinasti Syailendra terletak di provinsi...",
+      "pilihan": ["Jawa Barat", "Jawa Tengah", "Jawa Timur", "DI Yogyakarta"],
+      "benar": 1
+    },
+    {
+      "tanya": "Peristiwa perubahan wujud zat dari cair menjadi gas disebut...",
+      "pilihan": ["Membeku", "Mencair", "Mengembun", "Menguap"],
+      "benar": 3
+    },
+    {
+      "tanya": "Sila ketiga Pancasila dilambangkan dengan simbol...",
+      "pilihan": ["Bintang", "Rantai", "Pohon Beringin", "Kepala Banteng"],
+      "benar": 2
+    },
+    {
+      "tanya": "Sebuah persegi memiliki panjang sisi 8 cm. Luas persegi tersebut adalah...",
+      "pilihan": ["32 cm²", "48 cm²", "64 cm²", "72 cm²"],
+      "benar": 2
+    },
+    {
+      "tanya": "Ibu kota provinsi Jawa Timur adalah...",
+      "pilihan": ["Semarang", "Surabaya", "Malang", "Bandung"],
+      "benar": 1
+    },
+    {
+      "tanya": "Planet terbesar di Tata Surya kita adalah...",
+      "pilihan": ["Bumi", "Mars", "Saturnus", "Yupiter"],
+      "benar": 3
+    },
+    {
+      "tanya": "Alat pernapasan pada ikan adalah...",
+      "pilihan": ["Paru-paru", "Trakea", "Insang", "Kulit"],
+      "benar": 2
+    },
+    {
+      "tanya": "Sudut siku-siku memiliki besar sudut sebesar... derajat.",
+      "pilihan": ["45°", "90°", "180°", "360°"],
+      "benar": 1
+    },
+    {
+      "tanya": "Teks proklamasi kemerdekaan Indonesia dibacakan pada tahun...",
+      "pilihan": ["1942", "1944", "1945", "1950"],
+      "benar": 2
+    },
+    {
+      "tanya": "Gaya yang menyebabkan benda jatuh ke tanah disebut gaya...",
+      "pilihan": ["Magnet", "Gravitasi", "Gesek", "Pegas"],
+      "benar": 1
+    },
+    {
+      "tanya": "Lagu kebangsaan Indonesia Raya diciptakan oleh...",
+      "pilihan": ["W.R. Supratman", "Ismail Marzuki", "Kusbini", "C. Simanjuntak"],
+      "benar": 0
+    },
+    {
+      "tanya": "Berapakah hasil dari 250 + 175 - 125?",
+      "pilihan": ["280", "300", "320", "350"],
+      "benar": 1
+    },
+    {
+      "tanya": "Hewan pemakan daging disebut hewan...",
+      "pilihan": ["Herbivora", "Karnivora", "Omnivora", "Insektivora"],
+      "benar": 1
+    },
+    {
+      "tanya": "Pulau terpadat penduduknya di Indonesia adalah pulau...",
+      "pilihan": ["Sumatra", "Kalimantan", "Sulawesi", "Jawa"],
+      "benar": 3
+    },
+    {
+      "tanya": "Simbol satuan arus listrik dalam fisika adalah...",
+      "pilihan": ["Volt", "Ampere", "Ohm", "Watt"],
+      "benar": 1
+    },
+    {
+      "tanya": "Hasil dari 3/4 + 1/2 adalah...",
+      "pilihan": ["4/6", "5/4", "1", "3/8"],
+      "benar": 1
+    }
+  ]
+}
